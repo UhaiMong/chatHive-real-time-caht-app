@@ -1,10 +1,13 @@
-import { useRef, useCallback } from 'react';
-import { useSocket } from './useSocket';
+import { useRef, useCallback } from "react";
+import { useSocket } from "./useSocket";
+import { number } from "framer-motion";
 
 export const useTyping = (conversationId: string | null) => {
   const { emitTypingStart, emitTypingStop } = useSocket();
   const typingRef = useRef(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
   const onTyping = useCallback(() => {
     if (!conversationId) return;
@@ -14,7 +17,10 @@ export const useTyping = (conversationId: string | null) => {
       emitTypingStart(conversationId);
     }
 
-    clearTimeout(timeoutRef.current);
+    if (timeoutRef.current !== undefined) {
+      clearTimeout(timeoutRef.current);
+    }
+
     timeoutRef.current = setTimeout(() => {
       typingRef.current = false;
       emitTypingStop(conversationId);
