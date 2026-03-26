@@ -1,1 +1,10 @@
 @import "tailwindcss";
+/* bg-fixed bg-center bg-cover bg-no-repeat bg-[url(bg_png)] */
+
+.static-bg {
+  background-image: url("bg_png");
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}

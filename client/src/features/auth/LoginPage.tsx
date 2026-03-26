@@ -42,7 +42,7 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-4 bg-fixed bg-center bg-cover bg-no-repeat bg-[url(bg_.png)]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -52,30 +52,19 @@ export const LoginPage = () => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 mb-4">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
+            <img src="chatHive_white.png" alt="Logo" />
           </div>
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>
-          <p className="text-sm text-gray-500 mt-1">Sign in to ChatHive</p>
+          <p className="text-sm text-gray-100 mt-1">Sign in to ChatHive</p>
         </div>
 
-        <div className="bg-surface-secondary rounded-2xl p-6 border border-white/5">
+        <div className="bg-surface-secondary rounded-2xl p-6 border border-white/30">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-4"
           >
             <Input
+              className="placeholder:text-gray-500"
               label="Email"
               type="email"
               placeholder="you@example.com"
@@ -88,6 +77,7 @@ export const LoginPage = () => {
             />
 
             <Input
+              className="placeholder:text-gray-500"
               label="Password"
               type={showPass ? "text" : "password"}
               placeholder="••••••••"
@@ -126,11 +116,11 @@ export const LoginPage = () => {
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-500 mt-5">
+        <p className="text-center text-sm text-gray-100 mt-5">
           Don't have an account?{" "}
           <Link
             to="/register"
-            className="text-primary-400 hover:text-primary-300 font-medium transition-colors"
+            className="text-gray-200 hover:text-primary-300 font-bold transition-colors"
           >
             Create one
           </Link>

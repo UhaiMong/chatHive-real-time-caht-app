@@ -31,14 +31,14 @@ export const AppLayout = () => {
 
       {/* Main content */}
       <main
-        className={`flex-1 min-w-0 flex flex-col ${
+        className={`flex-1 min-w-0 flex flex-col bg-fixed bg-center bg-cover bg-no-repeat bg-[url(bg_.png)] ${
           !sidebarOpen || activeConversationId ? "flex" : "hidden md:flex"
         }`}
       >
         {activeConversation && currentUser ? (
           <ChatWindow
             conversation={activeConversation}
-            currentUserId={currentUser._id}
+            currentUserId={currentUser.userId}
           />
         ) : (
           <WelcomeScreen />

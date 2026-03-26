@@ -1,21 +1,28 @@
 // ── User ─────────────────────────────────────────────────────────────────────
 export interface User {
+  userId: string;
   _id: string;
   username: string;
   email: string;
   avatar: string | null;
   bio: string;
-  status: 'online' | 'offline' | 'away';
+  status: "online" | "offline" | "away";
   lastSeen: string;
   createdAt: string;
 }
 
 // ── Message ───────────────────────────────────────────────────────────────────
-export type MessageType = 'text' | 'image' | 'file' | 'audio' | 'video' | 'system';
+export type MessageType =
+  | "text"
+  | "image"
+  | "file"
+  | "audio"
+  | "video"
+  | "system";
 
 export interface MediaAttachment {
   url: string;
-  type: 'image' | 'video' | 'audio' | 'file';
+  type: "image" | "video" | "audio" | "file";
   name: string;
   size: number;
   mimeType: string;
@@ -29,7 +36,7 @@ export interface ReadReceipt {
 export interface Message {
   _id: string;
   conversation: string;
-  sender: Pick<User, '_id' | 'username' | 'avatar'>;
+  sender: Pick<User, "_id" | "username" | "avatar" | "userId">;
   type: MessageType;
   content: string;
   media?: MediaAttachment;
@@ -48,7 +55,7 @@ export interface Message {
 }
 
 // ── Conversation ──────────────────────────────────────────────────────────────
-export type ConversationType = 'direct' | 'group';
+export type ConversationType = "direct" | "group";
 
 export interface Conversation {
   _id: string;
