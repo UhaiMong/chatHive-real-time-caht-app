@@ -1,48 +1,56 @@
-import api from './api';
+import api from "./api";
 import type {
-  ApiResponse, AuthResult, User, Conversation, PaginatedMessages, Message,
-} from '../types';
+  ApiResponse,
+  AuthResult,
+  User,
+  Conversation,
+  PaginatedMessages,
+  Message,
+} from "../types";
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+//  Auth
 export const authApi = {
   register: (data: { username: string; email: string; password: string }) =>
-    api.post<ApiResponse<AuthResult>>('/auth/register', data),
+    api.post<ApiResponse<AuthResult>>("/auth/register", data),
 
   login: (data: { email: string; password: string }) =>
-    api.post<ApiResponse<AuthResult>>('/auth/login', data),
+    api.post<ApiResponse<AuthResult>>("/auth/login", data),
 
   logout: (refreshToken: string) =>
-    api.post<ApiResponse>('/auth/logout', { refreshToken }),
+    api.post<ApiResponse>("/auth/logout", { refreshToken }),
 
-  me: () => api.get<ApiResponse<User>>('/auth/me'),
+  me: () => api.get<ApiResponse<User>>("/auth/me"),
 };
 
-// ── Users ─────────────────────────────────────────────────────────────────────
+//  Users
 export const usersApi = {
   getProfile: (userId?: string) =>
-    api.get<ApiResponse<User>>(userId ? `/users/${userId}` : '/users/profile'),
+    api.get<ApiResponse<User>>(userId ? `/users/${userId}` : "/users/profile"),
 
   updateProfile: (formData: FormData) =>
-    api.patch<ApiResponse<User>>('/users/profile', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    api.patch<ApiResponse<User>>("/users/profile", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     }),
 
   search: (q: string) =>
-    api.get<ApiResponse<User[]>>('/users/search', { params: { q } }),
+    api.get<ApiResponse<User[]>>("/users/search", { params: { q } }),
 
-  blockUser: (userId: string) => api.post<ApiResponse>(`/users/${userId}/block`),
-  unblockUser: (userId: string) => api.delete<ApiResponse>(`/users/${userId}/block`),
+  blockUser: (userId: string) =>
+    api.post<ApiResponse>(`/users/${userId}/block`),
+  unblockUser: (userId: string) =>
+    api.delete<ApiResponse>(`/users/${userId}/block`),
+  onlineUsers: () => api.get<ApiResponse>("/users/online"),
 };
 
-// ── Conversations ─────────────────────────────────────────────────────────────
+//  Conversations
 export const conversationsApi = {
-  getAll: () => api.get<ApiResponse<Conversation[]>>('/conversations'),
+  getAll: () => api.get<ApiResponse<Conversation[]>>("/conversations"),
 
   getOrCreateDirect: (userId: string) =>
     api.get<ApiResponse<Conversation>>(`/conversations/direct/${userId}`),
 
   createGroup: (data: { name: string; participantIds: string[] }) =>
-    api.post<ApiResponse<Conversation>>('/conversations/group', data),
+    api.post<ApiResponse<Conversation>>("/conversations/group", data),
 
   getById: (id: string) =>
     api.get<ApiResponse<Conversation>>(`/conversations/${id}`),
@@ -51,28 +59,31 @@ export const conversationsApi = {
     api.patch<ApiResponse<Conversation>>(`/conversations/${id}`, data),
 
   addParticipants: (id: string, userIds: string[]) =>
-    api.post<ApiResponse<Conversation>>(`/conversations/${id}/participants`, { userIds }),
+    api.post<ApiResponse<Conversation>>(`/conversations/${id}/participants`, {
+      userIds,
+    }),
 
   removeParticipant: (id: string, userId: string) =>
-    api.delete<ApiResponse<Conversation>>(`/conversations/${id}/participants/${userId}`),
+    api.delete<ApiResponse<Conversation>>(
+      `/conversations/${id}/participants/${userId}`,
+    ),
 
-  leave: (id: string) =>
-    api.delete<ApiResponse>(`/conversations/${id}/leave`),
+  leave: (id: string) => api.delete<ApiResponse>(`/conversations/${id}/leave`),
 };
 
-// ── Messages ──────────────────────────────────────────────────────────────────
+// Messages
 export const messagesApi = {
   getMessages: (conversationId: string, cursor?: string) =>
     api.get<ApiResponse<PaginatedMessages>>(
       `/conversations/${conversationId}/messages`,
-      { params: cursor ? { cursor } : {} }
+      { params: cursor ? { cursor } : {} },
     ),
 
   sendMessage: (conversationId: string, formData: FormData) =>
     api.post<ApiResponse<Message>>(
       `/conversations/${conversationId}/messages`,
       formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
+      { headers: { "Content-Type": "multipart/form-data" } },
     ),
 
   markRead: (conversationId: string) =>
@@ -81,7 +92,7 @@ export const messagesApi = {
   editMessage: (conversationId: string, messageId: string, content: string) =>
     api.patch<ApiResponse<Message>>(
       `/conversations/${conversationId}/messages/${messageId}`,
-      { content }
+      { content },
     ),
 
   deleteForMe: (conversationId: string, messageId: string) =>
@@ -93,6 +104,6 @@ export const messagesApi = {
   searchMessages: (conversationId: string, q: string) =>
     api.get<ApiResponse<Message[]>>(
       `/conversations/${conversationId}/messages/search`,
-      { params: { q } }
+      { params: { q } },
     ),
 };

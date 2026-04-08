@@ -1,18 +1,99 @@
-import { Server as HttpServer } from 'http';
-import { Server, Socket } from 'socket.io';
-import { config } from '../config/env';
-import { verifyAccessToken } from '../shared/utils/jwt';
-import { userService } from '../features/users/user.service';
-import { messageService } from '../features/messages/message.service';
-import { conversationService } from '../features/conversations/conversation.service';
+import { Server as HttpServer } from "http";
+import { Server, Socket } from "socket.io";
+import { config } from "../config/env";
+import { verifyAccessToken } from "../shared/utils/jwt";
+import { userService } from "../features/users/user.service";
+import { messageService } from "../features/messages/message.service";
+import { conversationService } from "../features/conversations/conversation.service";
+import type { IMessage } from "../features/messages/message.model";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AuthSocket extends Socket {
   userId?: string;
   username?: string;
 }
 
-// In-memory map: userId → socketId (supports single device; extend to Set for multi-device)
-const onlineUsers = new Map<string, string>();
+// ─── Presence: multi-device aware (userId → Set<socketId>) ───────────────────
+
+/**
+ * FIX #7 (multi-device presence): Use a Set per user so multiple tabs/devices
+ * all count toward "online". A user is offline only when their last socket
+ * disconnects.
+ */
+const onlineUsers = new Map<string, Set<string>>();
+
+const addSocket = (userId: string, socketId: string): void => {
+  if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
+  onlineUsers.get(userId)!.add(socketId);
+};
+
+const removeSocket = (userId: string, socketId: string): boolean => {
+  const sockets = onlineUsers.get(userId);
+  if (!sockets) return false;
+  sockets.delete(socketId);
+  if (sockets.size === 0) {
+    onlineUsers.delete(userId);
+    return true; // truly offline now
+  }
+  return false;
+};
+
+// ─── Per-socket typing debounce ───────────────────────────────────────────────
+
+/**
+ * FIX #5 (typing spam): Track active typing timers per socket+conversation.
+ * Auto-emit "typing:stop" after TYPING_TIMEOUT ms of silence.
+ */
+const TYPING_TIMEOUT_MS = 3_000;
+const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+const typingKey = (socketId: string, conversationId: string) =>
+  `${socketId}:${conversationId}`;
+
+// ─── Per-socket rate limiting ─────────────────────────────────────────────────
+
+/**
+ * FIX #10 (message spam): Simple token-bucket per socket.
+ * 10 messages / 5 s window.
+ */
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 5_000;
+const messageRateLimits = new Map<string, { count: number; resetAt: number }>();
+
+const isRateLimited = (socketId: string): boolean => {
+  const now = Date.now();
+  const bucket = messageRateLimits.get(socketId);
+
+  if (!bucket || now >= bucket.resetAt) {
+    messageRateLimits.set(socketId, {
+      count: 1,
+      resetAt: now + RATE_LIMIT_WINDOW_MS,
+    });
+    return false;
+  }
+
+  if (bucket.count >= RATE_LIMIT_MAX) return true;
+  bucket.count++;
+  return false;
+};
+
+// ─── Logger helper ────────────────────────────────────────────────────────────
+
+/**
+ * FIX #11 (silent catch): Centralise error logging so every swallowed error
+ * is at least recorded. Replace with your preferred logger (pino/winston).
+ */
+const log = {
+  info: (msg: string, meta?: object) =>
+    console.info(JSON.stringify({ level: "info", msg, ...meta })),
+  warn: (msg: string, meta?: object) =>
+    console.warn(JSON.stringify({ level: "warn", msg, ...meta })),
+  error: (msg: string, meta?: object) =>
+    console.error(JSON.stringify({ level: "error", msg, ...meta })),
+};
+
+// ─── Main init ────────────────────────────────────────────────────────────────
 
 export const initSocket = (httpServer: HttpServer): Server => {
   const io = new Server(httpServer, {
@@ -20,13 +101,20 @@ export const initSocket = (httpServer: HttpServer): Server => {
       origin: config.clientUrl,
       credentials: true,
     },
-    transports: ['websocket', 'polling'],
+    transports: ["websocket", "polling"],
+    /**
+     * FIX #9 (stale sockets): Built-in ping keeps connections alive and
+     * detects silently dropped clients within ~45 s.
+     */
+    pingInterval: 25_000,
+    pingTimeout: 20_000,
   });
 
   // ── Auth middleware ──────────────────────────────────────────────────────────
+
   io.use((socket: AuthSocket, next) => {
     const token = socket.handshake.auth?.token as string | undefined;
-    if (!token) return next(new Error('Authentication required'));
+    if (!token) return next(new Error("Authentication required"));
 
     try {
       const payload = verifyAccessToken(token);
@@ -34,146 +122,284 @@ export const initSocket = (httpServer: HttpServer): Server => {
       socket.username = payload.email;
       next();
     } catch {
-      next(new Error('Invalid token'));
+      next(new Error("Invalid token"));
     }
   });
 
   // ── Connection ───────────────────────────────────────────────────────────────
-  io.on('connection', async (socket: AuthSocket) => {
+
+  io.on("connection", async (socket: AuthSocket) => {
     const userId = socket.userId!;
-    onlineUsers.set(userId, socket.id);
 
-    // Update DB status
-    await userService.updateStatus(userId, 'online');
+    /**
+     * FIX #7 multi-device: track socket-level, not user-level.
+     * FIX #6 (spurious user:online): only broadcast when this is the FIRST
+     * socket for the user (they were truly offline before).
+     */
+    const wasOffline = !onlineUsers.has(userId);
+    addSocket(userId, socket.id);
 
-    // Join personal room for direct notifications
+    // Always join the personal notification room
     socket.join(userId);
 
-    // Broadcast presence to all
-    socket.broadcast.emit('user:online', { userId });
+    if (wasOffline) {
+      await userService
+        .updateStatus(userId, "online")
+        .catch((err) =>
+          log.error("updateStatus online failed", { userId, err }),
+        );
+      // Broadcast to everyone else that this user came online
+      socket.broadcast.emit("user:online", { userId });
+    }
 
-    console.log(`🔌 Connected: ${userId}`);
+    log.info("socket connected", { userId, socketId: socket.id });
 
-    // ── Join conversation rooms ────────────────────────────────────────────────
-    socket.on('conversations:join', async () => {
+    // ── Join all conversation rooms ──────────────────────────────────────────
+
+    /**
+     * FIX #3 (room join on connect): Join rooms automatically on connect so
+     * the client doesn't need a separate round-trip event. Also exposed as an
+     * explicit event for reconnect/refresh scenarios.
+     */
+    const joinConversationRooms = async (): Promise<void> => {
       try {
-        const conversations = await conversationService.getUserConversations(userId);
-        conversations.forEach(c => socket.join(c._id.toString()));
+        const conversations =
+          await conversationService.getUserConversations(userId);
+        conversations.forEach((c) => socket.join(c._id.toString()));
       } catch (err) {
-        socket.emit('error', { message: 'Failed to join rooms' });
+        log.error("joinConversationRooms failed", { userId, err });
+        socket.emit("error", { message: "Failed to join conversation rooms" });
       }
-    });
+    };
 
-    // ── Messaging ─────────────────────────────────────────────────────────────
+    await joinConversationRooms();
+    socket.on("conversations:join", joinConversationRooms);
+
+    // ── Messaging ────────────────────────────────────────────────────────────
+
     socket.on(
-      'message:send',
+      "message:send",
       async (data: {
         conversationId: string;
         content?: string;
-        type?: string;
+        type?: IMessage["type"];
         replyTo?: string;
       }) => {
+        /**
+         * FIX #10 (rate limit): Drop the event early if the sender is sending
+         * too fast and notify them.
+         */
+        if (isRateLimited(socket.id)) {
+          socket.emit("message:error", {
+            error: "Rate limit exceeded. Slow down.",
+          });
+          return;
+        }
+
         try {
           const message = await messageService.send({
             conversationId: data.conversationId,
             senderId: userId,
-            type: (data.type as IMessage['type']) ?? 'text',
-            content: data.content ?? '',
+            type: data.type ?? "text",
+            content: data.content ?? "",
             replyTo: data.replyTo,
           });
 
-          // Emit to all in conversation room
-          io.to(data.conversationId).emit('message:new', message);
+          // Deliver to every participant in the room (including sender for echo)
+          io.to(data.conversationId).emit("message:new", message);
 
-          // Mark delivered for online participants
+          /**
+           * FIX #8 (delivery status): Mark as delivered for all online
+           * participants and emit the status back to the sender so they can
+           * show "delivered" ticks in the UI.
+           */
           await messageService.markDelivered(data.conversationId, userId);
+          io.to(data.conversationId).emit("message:delivered", {
+            messageId: message._id,
+            conversationId: data.conversationId,
+            deliveredAt: new Date(),
+          });
         } catch (err) {
-          socket.emit('message:error', { error: 'Failed to send message' });
+          log.error("message:send failed", { userId, data, err });
+          socket.emit("message:error", { error: "Failed to send message" });
         }
-      }
+      },
     );
 
-    socket.on('message:read', async (data: { conversationId: string }) => {
+    socket.on("message:read", async (data: { conversationId: string }) => {
       try {
         await messageService.markRead(data.conversationId, userId);
-        io.to(data.conversationId).emit('message:read', {
+        io.to(data.conversationId).emit("message:read", {
           conversationId: data.conversationId,
           userId,
           readAt: new Date(),
         });
-      } catch {
-        // silent
+      } catch (err) {
+        /**
+         * FIX #11 (silent catch): Log instead of swallowing.
+         */
+        log.error("message:read failed", {
+          userId,
+          conversationId: data.conversationId,
+          err,
+        });
       }
     });
 
     socket.on(
-      'message:edit',
-      async (data: { messageId: string; content: string; conversationId: string }) => {
+      "message:edit",
+      async (data: {
+        messageId: string;
+        content: string;
+        conversationId: string;
+      }) => {
         try {
-          const updated = await messageService.editMessage(data.messageId, userId, data.content);
-          io.to(data.conversationId).emit('message:edited', updated);
+          const updated = await messageService.editMessage(
+            data.messageId,
+            userId,
+            data.content,
+          );
+          io.to(data.conversationId).emit("message:edited", updated);
         } catch (err) {
-          socket.emit('message:error', { error: 'Failed to edit message' });
+          log.error("message:edit failed", { userId, data, err });
+          socket.emit("message:error", { error: "Failed to edit message" });
         }
-      }
+      },
     );
 
     socket.on(
-      'message:delete',
-      async (data: { messageId: string; conversationId: string; scope: 'me' | 'all' }) => {
+      "message:delete",
+      async (data: {
+        messageId: string;
+        conversationId: string;
+        scope: "me" | "all";
+      }) => {
         try {
-          if (data.scope === 'all') {
+          if (data.scope === "all") {
             await messageService.deleteForEveryone(data.messageId, userId);
-            io.to(data.conversationId).emit('message:deleted', {
+            io.to(data.conversationId).emit("message:deleted", {
               messageId: data.messageId,
               conversationId: data.conversationId,
             });
           } else {
             await messageService.deleteForMe(data.messageId, userId);
-            socket.emit('message:deleted', {
+            // Only the requesting socket sees this deletion
+            socket.emit("message:deleted", {
               messageId: data.messageId,
               conversationId: data.conversationId,
             });
           }
         } catch (err) {
-          socket.emit('message:error', { error: 'Failed to delete message' });
+          log.error("message:delete failed", { userId, data, err });
+          socket.emit("message:error", { error: "Failed to delete message" });
         }
-      }
+      },
     );
 
-    // ── Typing indicators ─────────────────────────────────────────────────────
-    socket.on('typing:start', (data: { conversationId: string }) => {
-      socket.to(data.conversationId).emit('typing:start', { userId, conversationId: data.conversationId });
+    // ── Typing indicators ────────────────────────────────────────────────────
+
+    /**
+     * FIX #5 (typing spam): Debounce — if "typing:start" fires repeatedly,
+     * only the first one fans out. The auto-stop timer resets each time, so
+     * continuous keystrokes keep the indicator alive without hammering peers.
+     */
+    socket.on("typing:start", (data: { conversationId: string }) => {
+      const key = typingKey(socket.id, data.conversationId);
+      const alreadyTyping = typingTimers.has(key);
+
+      // Reset (or start) the auto-stop timer
+      if (alreadyTyping) clearTimeout(typingTimers.get(key)!);
+
+      typingTimers.set(
+        key,
+        setTimeout(() => {
+          typingTimers.delete(key);
+          socket.to(data.conversationId).emit("typing:stop", {
+            userId,
+            conversationId: data.conversationId,
+          });
+        }, TYPING_TIMEOUT_MS),
+      );
+
+      // Only broadcast when typing begins, not on every keystroke
+      if (!alreadyTyping) {
+        socket.to(data.conversationId).emit("typing:start", {
+          userId,
+          conversationId: data.conversationId,
+        });
+      }
     });
 
-    socket.on('typing:stop', (data: { conversationId: string }) => {
-      socket.to(data.conversationId).emit('typing:stop', { userId, conversationId: data.conversationId });
+    socket.on("typing:stop", (data: { conversationId: string }) => {
+      const key = typingKey(socket.id, data.conversationId);
+      const timer = typingTimers.get(key);
+      if (timer) {
+        clearTimeout(timer);
+        typingTimers.delete(key);
+      }
+      socket
+        .to(data.conversationId)
+        .emit("typing:stop", { userId, conversationId: data.conversationId });
     });
 
-    // ── Conversation management ───────────────────────────────────────────────
-    socket.on('conversation:join', (conversationId: string) => {
+    // ── Conversation room management ─────────────────────────────────────────
+
+    socket.on("conversation:join", (conversationId: string) => {
       socket.join(conversationId);
     });
 
-    socket.on('conversation:leave', (conversationId: string) => {
+    socket.on("conversation:leave", (conversationId: string) => {
       socket.leave(conversationId);
     });
 
-    // ── Disconnection ─────────────────────────────────────────────────────────
-    socket.on('disconnect', async () => {
-      onlineUsers.delete(userId);
-      await userService.updateStatus(userId, 'offline');
-      socket.broadcast.emit('user:offline', { userId, lastSeen: new Date() });
-      console.log(`🔌 Disconnected: ${userId}`);
+    // ── Disconnect ───────────────────────────────────────────────────────────
+
+    socket.on("disconnect", async (reason) => {
+      // Clean up any active typing timers for this socket
+      for (const [key, timer] of typingTimers) {
+        if (key.startsWith(socket.id)) {
+          clearTimeout(timer);
+          typingTimers.delete(key);
+        }
+      }
+
+      // Clean up rate-limit bucket
+      messageRateLimits.delete(socket.id);
+
+      /**
+       * FIX #7 multi-device: only mark offline + broadcast when the user's
+       * LAST socket disconnects.
+       */
+      const isNowOffline = removeSocket(userId, socket.id);
+
+      if (isNowOffline) {
+        await userService
+          .updateStatus(userId, "offline")
+          .catch((err) =>
+            log.error("updateStatus offline failed", { userId, err }),
+          );
+        socket.broadcast.emit("user:offline", {
+          userId,
+          lastSeen: new Date(),
+        });
+      }
+
+      log.info("socket disconnected", { userId, socketId: socket.id, reason });
     });
   });
 
   return io;
 };
 
-// Helper to check if user is online (used by other services if needed)
-export const isUserOnline = (userId: string): boolean => onlineUsers.has(userId);
+// ─── Exports ──────────────────────────────────────────────────────────────────
+
+/** True if the user has at least one active socket connection */
+export const isUserOnline = (userId: string): boolean =>
+  onlineUsers.has(userId);
+
+/** All currently online user IDs */
 export const getOnlineUsers = (): string[] => Array.from(onlineUsers.keys());
 
-// Import type for convenience
-import type { IMessage } from '../features/messages/message.model';
+/** How many active sockets a user has (useful for debugging multi-tab) */
+export const getUserSocketCount = (userId: string): number =>
+  onlineUsers.get(userId)?.size ?? 0;

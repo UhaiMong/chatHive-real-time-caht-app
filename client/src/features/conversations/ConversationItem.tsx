@@ -12,8 +12,11 @@ interface ConversationItemProps {
   onClick: () => void;
 }
 
-const getDirectPeer = (conv: Conversation, userId: string): User | undefined =>
-  conv.participants.find((p) => p._id !== userId);
+// const getDirectPeer = (conv: Conversation, userId: string): User | undefined =>
+//   conv.participants.find((p) => p._id !== userId);
+const getDirectPeers = (conv: Conversation, userId: string): User[] => {
+  return conv.participants.filter((p) => String(p._id) !== String(userId));
+};
 
 export const ConversationItem = memo(
   ({
@@ -23,21 +26,25 @@ export const ConversationItem = memo(
     typingUsernames,
     onClick,
   }: ConversationItemProps) => {
-    const peer =
-      conversation.type === "direct"
-        ? getDirectPeer(conversation, currentUserId)
-        : undefined;
+    const peers = getDirectPeers(conversation, currentUserId);
 
     const displayName =
       conversation.type === "group"
-        ? (conversation.groupName ?? "Group")
-        : (peer?.username ?? "Unknown");
+        ? (conversation.groupName ?? peers.map((p) => p.username).join(", "))
+        : (peers[0]?.username ?? "Unknown");
 
-    const avatarUser = peer ?? {
-      userId: conversation._id,
-      username: displayName,
-      avatar: conversation.groupAvatar ?? null,
-    };
+    const avatarUser =
+      conversation.type === "group"
+        ? {
+            userId: conversation._id,
+            username: displayName,
+            avatar: conversation.groupAvatar ?? null,
+          }
+        : (peers[0] ?? {
+            userId: conversation._id,
+            username: displayName,
+            avatar: null,
+          });
 
     const lastMsgPreview = useMemo(() => {
       if (typingUsernames.length > 0) return null;
@@ -80,7 +87,7 @@ export const ConversationItem = memo(
           user={avatarUser}
           size="md"
           showStatus={conversation.type === "direct"}
-          status={peer?.status}
+          status={peers[0]?.status}
         />
 
         <div className="flex-1 min-w-0">
