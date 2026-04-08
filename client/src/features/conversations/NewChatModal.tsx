@@ -74,7 +74,7 @@ export const NewChatModal = ({ open }: NewChatModalProps) => {
           autoFocus
         />
 
-        <div className="min-h-[200px] max-h-[320px] overflow-y-auto -mx-1 px-1">
+        <div className="min-h-50 max-h-80 overflow-y-auto -mx-1 px-1">
           {loading && (
             <div className="flex justify-center py-8">
               <Spinner />

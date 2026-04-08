@@ -47,25 +47,27 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center p-4 bg-fixed bg-center bg-cover bg-no-repeat bg-[url(bg_.png)]">
+    <div className="relative min-h-screen bg-surface flex items-center justify-center p-4 bg-fixed bg-center bg-cover bg-no-repeat bg-[url(chatWindowbg.jpg)]">
+      {/* Overlay */}
+      <div className="absolute inset-0 z-0 bg-linear-to-t from-black/80 to-transparent" />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-8">
           {/* Logo */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-8 bg-black/90 py-4 rounded-2xl border-2 border-white">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 mb-4">
               <img src="chatHive_white.png" alt="Logo" />
             </div>
+            <h1 className="text-2xl font-bold text-white">Join ChatHive</h1>
+            <p className="text-sm text-gray-200 mt-1">Create your account</p>
           </div>
-          <h1 className="text-2xl font-bold text-white">Join ChatHive</h1>
-          <p className="text-sm text-gray-200 mt-1">Create your account</p>
         </div>
 
-        <div className="bg-surface-secondary rounded-2xl p-6 border border-white/30">
+        <div className="bg-black/90 text-gray-200 rounded-2xl p-6 border-2 border-white">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col gap-4"
@@ -140,7 +142,7 @@ export const RegisterPage = () => {
             <Button
               type="submit"
               loading={status === "loading"}
-              className="w-full mt-1"
+              className="w-full mt-1 bg-green-600"
               size="lg"
             >
               Create account
@@ -148,13 +150,13 @@ export const RegisterPage = () => {
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-200 mt-5">
+        <p className="text-center text-gray-100 mt-5">
           Already have an account?{" "}
           <Link
             to="/login"
-            className="text-primary-400 hover:text-gray-200 font-bold transition-colors"
+            className="font-bold bg-white text-gray-950 p-2 underline rounded-2xl"
           >
-            Sign in
+            Sign In
           </Link>
         </p>
       </motion.div>

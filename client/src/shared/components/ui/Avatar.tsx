@@ -37,7 +37,7 @@ export const Avatar = memo(
       return (
         <div
           className={cn(
-            "rounded-full bg-surface-elevated flex-shrink-0",
+            "rounded-full bg-surface-elevated shrink-0",
             sizeMap[size],
             className,
           )}
@@ -45,7 +45,7 @@ export const Avatar = memo(
       );
     }
     return (
-      <div className="relative flex-shrink-0">
+      <div className="relative shrink-0">
         {user.avatar ? (
           <img
             src={user.avatar}
@@ -73,9 +73,9 @@ export const Avatar = memo(
         {showStatus && status && (
           <span
             className={cn(
-              "absolute bottom-0 right-0 rounded-full border-2 border-surface",
+              "absolute bottom-0 right-0 rounded-full border-[0.8px] border-surface",
               statusDotSize[size],
-              status === "online" ? "bg-emerald-400" : "bg-gray-500",
+              status === "online" ? "bg-green-700" : "bg-gray-400",
             )}
           />
         )}

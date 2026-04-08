@@ -38,7 +38,7 @@ export const ChatHeader = memo(
         : (peer?.username ?? "Unknown");
 
     const avatarUser = peer ?? {
-      _id: conversation._id,
+      userId: conversation._id,
       username: displayName,
       avatar: conversation.groupAvatar ?? null,
     };
@@ -72,10 +72,10 @@ export const ChatHeader = memo(
     ];
 
     return (
-      <header className="flex items-center gap-3 px-4 py-3 bg-surface-secondary border-b border-white/5 shrink-0">
+      <header className="flex items-center gap-3 px-4 py-3 bg-green-400 text-black shrink-0">
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className="p-1.5 -ml-1 rounded-lg hover:bg-surface-elevated text-gray-400 hover:text-gray-200 transition-colors md:hidden"
+          className="p-1.5 -ml-1 rounded-lg transition-colors md:hidden"
         >
           <Bars3Icon className="w-5 h-5" />
         </button>
@@ -91,9 +91,7 @@ export const ChatHeader = memo(
             status={peer?.status}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-100 truncate">
-              {displayName}
-            </p>
+            <p className="text-sm font-semibold truncate">{displayName}</p>
             <p
               className={`text-xs truncate transition-colors ${
                 typingUsers.length > 0
@@ -106,15 +104,15 @@ export const ChatHeader = memo(
           </div>
         </button>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button
-            className="p-2 rounded-lg hover:bg-surface-elevated text-gray-400 hover:text-gray-200 transition-colors opacity-40 cursor-not-allowed"
+            className="p-2 rounded-lg hover:bg-surface-elevated cursor-not-allowed"
             title="Voice call (coming soon)"
           >
             <PhoneIcon className="w-5 h-5" />
           </button>
           <button
-            className="p-2 rounded-lg hover:bg-surface-elevated text-gray-400 hover:text-gray-200 transition-colors"
+            className="p-2 rounded-lg hover:bg-surface-elevated transition-colors"
             title="Search"
           >
             <MagnifyingGlassIcon className="w-5 h-5" />
@@ -122,7 +120,7 @@ export const ChatHeader = memo(
           <ContextMenuDrawer
             items={menuItems}
             trigger={
-              <button className="p-2 rounded-lg hover:bg-surface-elevated text-gray-400 hover:text-gray-200 transition-colors">
+              <button className="p-2 rounded-lg hover:bg-surface-elevated transition-colors">
                 <EllipsisVerticalIcon className="w-5 h-5" />
               </button>
             }

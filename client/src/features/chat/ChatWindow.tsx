@@ -1,5 +1,5 @@
 import { useState, useCallback, memo } from "react";
-import { useAppDispatch, useAppSelector } from "../../shared/store/hooks";
+import { useAppDispatch } from "../../shared/store/hooks";
 import { updateMessage } from "./messagesSlice";
 import { addNotification } from "../notifications/notificationsSlice";
 import { messagesApi } from "../../shared/services/apiServices";
@@ -52,7 +52,7 @@ export const ChatWindow = memo(
     const isGroup = conversation.type === "group";
 
     return (
-      <div className="flex flex-col h-full min-h-0 bg-black/50">
+      <div className="flex flex-col h-full min-h-0 bg-[url('chatWindowbg.jpg')] bg-fixed bg-cover bg-center">
         <ChatHeader conversation={conversation} currentUserId={currentUserId} />
 
         <MessageList

@@ -31,7 +31,7 @@ export const AppLayout = () => {
 
       {/* Main content */}
       <main
-        className={`flex-1 min-w-0 flex flex-col bg-fixed bg-center bg-cover bg-no-repeat bg-[url(bg_.png)] ${
+        className={`flex-1 min-w-0 flex flex-col ${
           !sidebarOpen || activeConversationId ? "flex" : "hidden md:flex"
         }`}
       >

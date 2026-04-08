@@ -8,8 +8,7 @@ import { clearUnread } from "../conversations/conversationsSlice";
 import { useSocket } from "../../shared/hooks/useSocket";
 import { MessageBubble } from "./MessageBubble";
 import { Spinner } from "../../shared/components/ui/Spinner";
-import { cn, formatMessageTime } from "../../shared/utils/helpers";
-import { format, parseISO, isToday, isYesterday, isSameDay } from "date-fns";
+import { format, parseISO, isToday, isYesterday } from "date-fns";
 import type { Message } from "../../shared/types";
 
 interface MessageListProps {
@@ -28,11 +27,11 @@ const DateDivider = ({ date }: { date: string }) => {
       : format(d, "MMMM d, yyyy");
   return (
     <div className="flex items-center gap-3 py-2 px-4">
-      <div className="flex-1 h-px bg-white/5" />
-      <span className="text-[11px] text-gray-600 shrink-0 bg-surface px-2 py-0.5 rounded-full">
+      <div className="flex-1 h-px bg-white" />
+      <span className="text-[11px] text-gray-50 bg-[#282A29] rounded-sm shrink-0 bg-surface px-2 py-0.5">
         {label}
       </span>
-      <div className="flex-1 h-px bg-white/5" />
+      <div className="flex-1 h-px bg-white" />
     </div>
   );
 };
@@ -58,7 +57,6 @@ export const MessageList = memo(
     const nextCursor = pageData?.nextCursor ?? null;
     const loading = pageData?.loading ?? false;
     const initialized = pageData?.initialized ?? false;
-    console.log(messages, currentUserId);
     // Sentinel for infinite scroll (top of list)
     const { ref: topSentinel, inView: topInView } = useInView({
       threshold: 0.1,
@@ -143,7 +141,7 @@ export const MessageList = memo(
         <div
           ref={containerRef}
           onScroll={handleScroll}
-          className="h-full overflow-y-auto px-3 py-4 space-y-1"
+          className="h-full overflow-y-auto custom-scrollbar px-3 py-4 space-y-1"
           style={{
             backgroundImage:
               "radial-gradient(ellipse at 50% 0%, rgba(34,197,94,0.02) 0%, transparent 60%)",
@@ -167,7 +165,7 @@ export const MessageList = memo(
             </div>
           )}
 
-          {groupedMessages.map((group) => (
+          {groupedMessages?.map((group) => (
             <div key={group.date}>
               <DateDivider date={`${group.date}T00:00:00.000Z`} />
               <div className="space-y-1">

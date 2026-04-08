@@ -1,4 +1,4 @@
-// ── User ─────────────────────────────────────────────────────────────────────
+//  User
 export interface User {
   userId: string;
   _id: string;
@@ -11,7 +11,7 @@ export interface User {
   createdAt: string;
 }
 
-// ── Message ───────────────────────────────────────────────────────────────────
+//  Message
 export type MessageType =
   | "text"
   | "image"
@@ -54,7 +54,7 @@ export interface Message {
   localId?: string;
 }
 
-// ── Conversation ──────────────────────────────────────────────────────────────
+// Conversation
 export type ConversationType = "direct" | "group";
 
 export interface Conversation {
@@ -75,7 +75,7 @@ export interface Conversation {
   typingUsers?: string[];
 }
 
-// ── API ───────────────────────────────────────────────────────────────────────
+// API
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
@@ -94,7 +94,7 @@ export interface PaginatedMessages {
   nextCursor: string | null;
 }
 
-// ── Socket events ─────────────────────────────────────────────────────────────
+// Socket events
 export interface TypingEvent {
   userId: string;
   conversationId: string;

@@ -1,10 +1,38 @@
 @import "tailwindcss";
-/* bg-fixed bg-center bg-cover bg-no-repeat bg-[url(bg_png)] */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
 
-.static-bg {
-  background-image: url("bg_png");
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #e4e4e4;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #55da29;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  /* For Firefox Support (Limited customization) */
+  .custom-scrollbar {
+    scrollbar-width: thin; /* or auto */
+    scrollbar-color: #888 #f1f1f1;
+  }
+}
+
+/* No scrollbar */
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }

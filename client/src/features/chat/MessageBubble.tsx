@@ -17,6 +17,7 @@ import { useAppDispatch } from "../../shared/store/hooks";
 import { setReplyTo } from "../../shared/store/uiSlice";
 import { useSocket } from "../../shared/hooks/useSocket";
 import type { Message } from "../../shared/types";
+import ActionBtn from "./ActionBtn";
 
 interface MessageBubbleProps {
   message: Message;
@@ -88,11 +89,11 @@ export const MessageBubble = memo(
           {message.replyTo && typeof message.replyTo === "object" && (
             <div
               className={cn(
-                "text-xs rounded-t-xl px-3 py-2 mb-0.5 border-l-2 border-primary-500 opacity-70 max-w-full",
+                "text-xs rounded-t-xl px-3 py-2 mb-0.5 border-l-2 border-primary-900 max-w-full",
                 isMine ? "bg-msg-sent/50 text-right" : "bg-surface-elevated",
               )}
             >
-              <span className="font-medium text-primary-400 block truncate">
+              <span className="font-medium text-primary-400 bg-gray-200 p-1 rounded-sm block truncate">
                 {message.replyTo.sender.username}
               </span>
               <span className="text-gray-400 truncate block">
@@ -119,7 +120,7 @@ export const MessageBubble = memo(
                   <img
                     src={message.media.url}
                     alt={message.media.name}
-                    className="rounded-xl max-w-65 max-h-65 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    className="rounded-xl max-w-65 max-h-65 object-cover cursor-pointer"
                     loading="lazy"
                     onClick={() => window.open(message.media!.url, "_blank")}
                   />
@@ -162,7 +163,9 @@ export const MessageBubble = memo(
 
             {/* Text content */}
             {message.content && (
-              <p className="text-sm text-gray-100 leading-relaxed whitespace-pre-wrap wrap-break-words">
+              <p
+                className={`text-sm p-2.5 text-gray-950 rounded-xl leading-relaxed whitespace-pre-wrap wrap-break-words ${isMine ? "bg-green-400" : "bg-gray-50"}`}
+              >
                 {message.content}
               </p>
             )}
@@ -232,28 +235,3 @@ export const MessageBubble = memo(
   },
 );
 MessageBubble.displayName = "MessageBubble";
-
-const ActionBtn = ({
-  icon,
-  title,
-  onClick,
-  danger = false,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  onClick: () => void;
-  danger?: boolean;
-}) => (
-  <button
-    onClick={onClick}
-    title={title}
-    className={cn(
-      "p-1.5 rounded-lg transition-colors",
-      danger
-        ? "hover:bg-red-500/10 text-gray-500 hover:text-red-400"
-        : "hover:bg-surface-elevated text-gray-500 hover:text-gray-300",
-    )}
-  >
-    {icon}
-  </button>
-);

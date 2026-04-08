@@ -4,7 +4,6 @@ import {
   PencilSquareIcon,
   UserGroupIcon,
   MagnifyingGlassIcon,
-  ArrowRightOnRectangleIcon,
   Cog6ToothIcon,
   ArrowRightEndOnRectangleIcon,
   CogIcon,
@@ -102,7 +101,7 @@ export const Sidebar = memo(() => {
             initial={{ x: -320 }}
             animate={{ x: 0 }}
             exit={{ x: -320 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            // transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={cn(
               "flex flex-col h-full w-full md:w-85 shrink-0",
               "bg-surface-secondary border-r border-white/5",
@@ -110,7 +109,7 @@ export const Sidebar = memo(() => {
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-4 bg-linear-to-r from-amber-400 to-amber-600 text-gray-50">
+            <div className="flex items-center justify-between px-4 py-4 bg-linear-to-r from-green-400 to-green-600 text-gray-50">
               <ContextMenuDrawer
                 items={menuItems}
                 trigger={
@@ -147,7 +146,7 @@ export const Sidebar = memo(() => {
             </div>
 
             {/* Search */}
-            <div className="px-3 py-2.5 bg-black/80 text-white/80">
+            <div className="bg-gray-200 text-gray-950 w-10/12 m-auto rounded-2xl mt-2.5">
               <Input
                 placeholder="Search conversations…"
                 leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
@@ -157,7 +156,7 @@ export const Sidebar = memo(() => {
             </div>
 
             {/* Conversation list */}
-            <div className="flex-1 overflow-y-auto px-2 py-1 bg-black/90 text-gray-100">
+            <div className="flex-1 overflow-y-auto px-2 py-1 bg-white text-gray-950">
               {status === "loading" && convs.length === 0 && (
                 <div className="flex justify-center py-12">
                   <Spinner />
