@@ -97,14 +97,9 @@ export const Sidebar = memo(() => {
       <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
-            key="sidebar"
-            initial={{ x: -320 }}
-            animate={{ x: 0 }}
-            exit={{ x: -320 }}
-            // transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className={cn(
               "flex flex-col h-full w-full md:w-85 shrink-0",
-              "bg-surface-secondary border-r border-white/5",
+              "bg-gray-100 text-gray-950",
               "absolute md:relative z-20",
             )}
           >
@@ -156,7 +151,7 @@ export const Sidebar = memo(() => {
             </div>
 
             {/* Conversation list */}
-            <div className="flex-1 overflow-y-auto px-2 py-1 bg-white text-gray-950">
+            <div className="flex-1 overflow-y-auto px-2 py-1">
               {status === "loading" && convs.length === 0 && (
                 <div className="flex justify-center py-12">
                   <Spinner />

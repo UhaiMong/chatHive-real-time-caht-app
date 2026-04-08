@@ -11,12 +11,13 @@ export const cn = (...inputs: ClassValue[]): string => clsx(inputs);
 
 export const formatMessageTime = (dateStr: string): string => {
   const date = parseISO(dateStr);
-  return format(date, "HH:mm");
+  return format(date, "p"); // for 12-hour/am:pm
+  // return format(date, "HH:mm"); for 24-hour
 };
 
 export const formatConversationTime = (dateStr: string): string => {
   const date = parseISO(dateStr);
-  if (isToday(date)) return format(date, "HH:mm");
+  if (isToday(date)) return format(date, "p");
   if (isYesterday(date)) return "Yesterday";
   return format(date, "dd/MM/yyyy");
 };

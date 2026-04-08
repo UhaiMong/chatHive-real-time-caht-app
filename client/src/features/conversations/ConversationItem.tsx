@@ -72,8 +72,8 @@ export const ConversationItem = memo(
         layout
         onClick={onClick}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors",
-          isActive ? "bg-gray-100" : "hover:bg-gray-200",
+          "w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors hover:bg-green-200 bg-gray-200",
+          isActive ? "bg-green-200" : "",
         )}
       >
         <Avatar

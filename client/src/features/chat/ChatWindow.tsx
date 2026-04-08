@@ -52,29 +52,36 @@ export const ChatWindow = memo(
     const isGroup = conversation.type === "group";
 
     return (
-      <div className="flex flex-col h-full min-h-0 bg-[url('chatWindowbg.jpg')] bg-fixed bg-cover bg-center">
-        <ChatHeader conversation={conversation} currentUserId={currentUserId} />
+      <div className="relative h-full min-h-0 bg-[url('chatWindowbg.jpg')] bg-fixed bg-cover bg-center">
+        {/* overlay */}
+        <div className="absolute z-0 bg-black/90 inset-0" />
+        <section className="relative h-full z-10 flex flex-col">
+          <ChatHeader
+            conversation={conversation}
+            currentUserId={currentUserId}
+          />
 
-        <MessageList
-          conversationId={conversation._id}
-          currentUserId={currentUserId}
-          isGroup={isGroup}
-          onEditMessage={handleEditMessage}
-        />
+          <MessageList
+            conversationId={conversation._id}
+            currentUserId={currentUserId}
+            isGroup={isGroup}
+            onEditMessage={handleEditMessage}
+          />
 
-        <ReplyBar />
+          <ReplyBar />
 
-        <MessageInput
-          conversationId={conversation._id}
-          currentUser={{
-            _id: currentUserId,
-            username: "",
-            avatar: null,
-          }}
-          editingMessage={editingMessage}
-          onCancelEdit={handleCancelEdit}
-          onEditSubmit={handleEditSubmit}
-        />
+          <MessageInput
+            conversationId={conversation._id}
+            currentUser={{
+              _id: currentUserId,
+              username: "",
+              avatar: null,
+            }}
+            editingMessage={editingMessage}
+            onCancelEdit={handleCancelEdit}
+            onEditSubmit={handleEditSubmit}
+          />
+        </section>
       </div>
     );
   },
