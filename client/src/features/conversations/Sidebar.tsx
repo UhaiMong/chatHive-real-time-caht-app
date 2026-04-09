@@ -57,11 +57,11 @@ export const Sidebar = memo(() => {
       const name =
         c.type === "group"
           ? (c.groupName ?? "")
-          : (c.participants.find((p) => p._id !== currentUser?._id)?.username ??
-            "");
+          : (c.participants.find((p) => p._id !== currentUser?.userId)
+              ?.username ?? "");
       return name.toLowerCase().includes(q);
     });
-  }, [convs, searchQuery, currentUser?._id]);
+  }, [convs, searchQuery, currentUser?.userId]);
 
   const menuItems = [
     {
@@ -186,7 +186,7 @@ export const Sidebar = memo(() => {
                     <ConversationItem
                       key={conv._id}
                       conversation={conv}
-                      currentUserId={currentUser?._id ?? ""}
+                      currentUserId={currentUser?.userId ?? ""}
                       isActive={activeConversationId === conv._id}
                       typingUsernames={typingNames}
                       onClick={() => dispatch(setActiveConversation(conv._id))}

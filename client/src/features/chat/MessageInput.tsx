@@ -154,6 +154,8 @@ export const MessageInput = memo(
       }
     };
 
+    // console.log("Typing indicator: ", onTyping(), stopTyping());
+
     return (
       <div className="shrink-0 bg-surface-secondary">
         {/* Edit mode banner */}

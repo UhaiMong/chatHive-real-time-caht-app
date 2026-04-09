@@ -11,9 +11,6 @@ interface ConversationItemProps {
   typingUsernames: string[];
   onClick: () => void;
 }
-
-// const getDirectPeer = (conv: Conversation, userId: string): User | undefined =>
-//   conv.participants.find((p) => p._id !== userId);
 const getDirectPeers = (conv: Conversation, userId: string): User[] => {
   return conv.participants.filter((p) => String(p._id) !== String(userId));
 };

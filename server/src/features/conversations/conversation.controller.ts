@@ -47,11 +47,10 @@ function requireObjectIdArray(value: unknown, fieldName: string): string[] {
   return value as string[];
 }
 
-// ─── Controllers
+// All Controllers logic are here
 
 /**
  * GET /conversations
- * Returns all conversations for the authenticated user.
  */
 export const getMyConversations = async (
   req: AuthRequest,

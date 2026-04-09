@@ -1,6 +1,5 @@
 import { useRef, useCallback } from "react";
 import { useSocket } from "./useSocket";
-import { number } from "framer-motion";
 
 export const useTyping = (conversationId: string | null) => {
   const { emitTypingStart, emitTypingStop } = useSocket();

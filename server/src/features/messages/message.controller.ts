@@ -7,7 +7,7 @@ import { messageService } from "./message.service";
 import { sendSuccess } from "../../shared/utils/response";
 import { AppError, ErrorCode } from "../../shared/utils/AppError";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
@@ -33,7 +33,7 @@ const MAX_SEARCH_QUERY_LENGTH = 200;
 const MAX_MESSAGE_CONTENT_LENGTH = 5000;
 const CURSOR_REGEX = /^[a-f\d]{24}$/i; // ObjectId as cursor
 
-// ─── DTOs ─────────────────────────────────────────────────────────────────────
+// DTOs
 
 type MediaType = "image" | "video" | "audio" | "file";
 
@@ -54,7 +54,7 @@ interface EditMessageBody {
   content: string;
 }
 
-// ─── Guards ───────────────────────────────────────────────────────────────────
+//  Guards
 
 function requireObjectId(value: unknown, fieldName: string): string {
   if (typeof value !== "string" || !isValidObjectId(value)) {
@@ -92,7 +92,7 @@ function buildMediaPayload(file: Express.Multer.File): MediaPayload {
   };
 }
 
-// ─── Controllers ──────────────────────────────────────────────────────────────
+// Controllers
 
 /**
  * GET /conversations/:conversationId/messages?cursor=<objectId>&limit=<n>

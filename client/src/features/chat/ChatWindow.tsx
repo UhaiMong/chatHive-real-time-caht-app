@@ -8,6 +8,7 @@ import { MessageList } from "./MessageList";
 import { ReplyBar } from "./ReplyBar";
 import { MessageInput } from "./MessageInput";
 import type { Conversation, Message } from "../../shared/types";
+import { TypingIndicator } from "@/shared/components/ui/TypingIndicator";
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -69,6 +70,8 @@ export const ChatWindow = memo(
           />
 
           <ReplyBar />
+
+          <TypingIndicator conversationId={conversation._id} />
 
           <MessageInput
             conversationId={conversation._id}

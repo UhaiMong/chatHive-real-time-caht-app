@@ -7,20 +7,13 @@ import { messageService } from "../features/messages/message.service";
 import { conversationService } from "../features/conversations/conversation.service";
 import type { IMessage } from "../features/messages/message.model";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 interface AuthSocket extends Socket {
   userId?: string;
   username?: string;
 }
-
-// ─── Presence: multi-device aware (userId → Set<socketId>) ───────────────────
-
-/**
- * FIX #7 (multi-device presence): Use a Set per user so multiple tabs/devices
- * all count toward "online". A user is offline only when their last socket
- * disconnects.
- */
+// Online of offline user
 const onlineUsers = new Map<string, Set<string>>();
 
 const addSocket = (userId: string, socketId: string): void => {
@@ -39,24 +32,14 @@ const removeSocket = (userId: string, socketId: string): boolean => {
   return false;
 };
 
-// ─── Per-socket typing debounce ───────────────────────────────────────────────
-
-/**
- * FIX #5 (typing spam): Track active typing timers per socket+conversation.
- * Auto-emit "typing:stop" after TYPING_TIMEOUT ms of silence.
- */
+// Typing
 const TYPING_TIMEOUT_MS = 3_000;
 const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 const typingKey = (socketId: string, conversationId: string) =>
-  `${socketId}:${conversationId}`;
+  `${socketId} || ${conversationId}`;
 
-// ─── Per-socket rate limiting ─────────────────────────────────────────────────
-
-/**
- * FIX #10 (message spam): Simple token-bucket per socket.
- * 10 messages / 5 s window.
- */
+// Per socket rate limit
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 5_000;
 const messageRateLimits = new Map<string, { count: number; resetAt: number }>();
@@ -78,12 +61,7 @@ const isRateLimited = (socketId: string): boolean => {
   return false;
 };
 
-// ─── Logger helper ────────────────────────────────────────────────────────────
-
-/**
- * FIX #11 (silent catch): Centralise error logging so every swallowed error
- * is at least recorded. Replace with your preferred logger (pino/winston).
- */
+// Logger helper
 const log = {
   info: (msg: string, meta?: object) =>
     console.info(JSON.stringify({ level: "info", msg, ...meta })),
@@ -93,7 +71,7 @@ const log = {
     console.error(JSON.stringify({ level: "error", msg, ...meta })),
 };
 
-// ─── Main init ────────────────────────────────────────────────────────────────
+// Main init
 
 export const initSocket = (httpServer: HttpServer): Server => {
   const io = new Server(httpServer, {
@@ -102,15 +80,11 @@ export const initSocket = (httpServer: HttpServer): Server => {
       credentials: true,
     },
     transports: ["websocket", "polling"],
-    /**
-     * FIX #9 (stale sockets): Built-in ping keeps connections alive and
-     * detects silently dropped clients within ~45 s.
-     */
     pingInterval: 25_000,
     pingTimeout: 20_000,
   });
 
-  // ── Auth middleware ──────────────────────────────────────────────────────────
+  // Auth middleware(Auth socket)
 
   io.use((socket: AuthSocket, next) => {
     const token = socket.handshake.auth?.token as string | undefined;
@@ -126,20 +100,12 @@ export const initSocket = (httpServer: HttpServer): Server => {
     }
   });
 
-  // ── Connection ───────────────────────────────────────────────────────────────
+  // Connection
 
   io.on("connection", async (socket: AuthSocket) => {
     const userId = socket.userId!;
-
-    /**
-     * FIX #7 multi-device: track socket-level, not user-level.
-     * FIX #6 (spurious user:online): only broadcast when this is the FIRST
-     * socket for the user (they were truly offline before).
-     */
     const wasOffline = !onlineUsers.has(userId);
     addSocket(userId, socket.id);
-
-    // Always join the personal notification room
     socket.join(userId);
 
     if (wasOffline) {
@@ -153,14 +119,6 @@ export const initSocket = (httpServer: HttpServer): Server => {
     }
 
     log.info("socket connected", { userId, socketId: socket.id });
-
-    // ── Join all conversation rooms ──────────────────────────────────────────
-
-    /**
-     * FIX #3 (room join on connect): Join rooms automatically on connect so
-     * the client doesn't need a separate round-trip event. Also exposed as an
-     * explicit event for reconnect/refresh scenarios.
-     */
     const joinConversationRooms = async (): Promise<void> => {
       try {
         const conversations =
@@ -175,7 +133,7 @@ export const initSocket = (httpServer: HttpServer): Server => {
     await joinConversationRooms();
     socket.on("conversations:join", joinConversationRooms);
 
-    // ── Messaging ────────────────────────────────────────────────────────────
+    // Messaging
 
     socket.on(
       "message:send",
@@ -185,10 +143,6 @@ export const initSocket = (httpServer: HttpServer): Server => {
         type?: IMessage["type"];
         replyTo?: string;
       }) => {
-        /**
-         * FIX #10 (rate limit): Drop the event early if the sender is sending
-         * too fast and notify them.
-         */
         if (isRateLimited(socket.id)) {
           socket.emit("message:error", {
             error: "Rate limit exceeded. Slow down.",
@@ -204,15 +158,7 @@ export const initSocket = (httpServer: HttpServer): Server => {
             content: data.content ?? "",
             replyTo: data.replyTo,
           });
-
-          // Deliver to every participant in the room (including sender for echo)
           io.to(data.conversationId).emit("message:new", message);
-
-          /**
-           * FIX #8 (delivery status): Mark as delivered for all online
-           * participants and emit the status back to the sender so they can
-           * show "delivered" ticks in the UI.
-           */
           await messageService.markDelivered(data.conversationId, userId);
           io.to(data.conversationId).emit("message:delivered", {
             messageId: message._id,
@@ -235,9 +181,6 @@ export const initSocket = (httpServer: HttpServer): Server => {
           readAt: new Date(),
         });
       } catch (err) {
-        /**
-         * FIX #11 (silent catch): Log instead of swallowing.
-         */
         log.error("message:read failed", {
           userId,
           conversationId: data.conversationId,
@@ -296,13 +239,7 @@ export const initSocket = (httpServer: HttpServer): Server => {
       },
     );
 
-    // ── Typing indicators ────────────────────────────────────────────────────
-
-    /**
-     * FIX #5 (typing spam): Debounce — if "typing:start" fires repeatedly,
-     * only the first one fans out. The auto-stop timer resets each time, so
-     * continuous keystrokes keep the indicator alive without hammering peers.
-     */
+    // Typing indicators
     socket.on("typing:start", (data: { conversationId: string }) => {
       const key = typingKey(socket.id, data.conversationId);
       const alreadyTyping = typingTimers.has(key);
@@ -342,8 +279,6 @@ export const initSocket = (httpServer: HttpServer): Server => {
         .emit("typing:stop", { userId, conversationId: data.conversationId });
     });
 
-    // ── Conversation room management ─────────────────────────────────────────
-
     socket.on("conversation:join", (conversationId: string) => {
       socket.join(conversationId);
     });
@@ -352,12 +287,12 @@ export const initSocket = (httpServer: HttpServer): Server => {
       socket.leave(conversationId);
     });
 
-    // ── Disconnect ───────────────────────────────────────────────────────────
+    // Disconnect
 
     socket.on("disconnect", async (reason) => {
       // Clean up any active typing timers for this socket
       for (const [key, timer] of typingTimers) {
-        if (key.startsWith(socket.id)) {
+        if (key.startsWith(socket.id + "||")) {
           clearTimeout(timer);
           typingTimers.delete(key);
         }
@@ -365,11 +300,6 @@ export const initSocket = (httpServer: HttpServer): Server => {
 
       // Clean up rate-limit bucket
       messageRateLimits.delete(socket.id);
-
-      /**
-       * FIX #7 multi-device: only mark offline + broadcast when the user's
-       * LAST socket disconnects.
-       */
       const isNowOffline = removeSocket(userId, socket.id);
 
       if (isNowOffline) {
@@ -391,9 +321,8 @@ export const initSocket = (httpServer: HttpServer): Server => {
   return io;
 };
 
-// ─── Exports ──────────────────────────────────────────────────────────────────
+// Exports
 
-/** True if the user has at least one active socket connection */
 export const isUserOnline = (userId: string): boolean =>
   onlineUsers.has(userId);
 
