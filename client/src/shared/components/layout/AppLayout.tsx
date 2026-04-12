@@ -1,10 +1,3 @@
-// import { useAppSelector } from '../../shared/store/hooks';
-// import { useSocket } from '../../shared/hooks/useSocket';
-// import { Sidebar } from '../../features/conversations/Sidebar';
-// import { ChatWindow } from '../../features/chat/ChatWindow';
-// import { WelcomeScreen } from '../../features/chat/WelcomeScreen';
-// import { ToastContainer } from '../components/ui/ToastContainer';
-
 import { ChatWindow } from "@/features/chat/ChatWindow";
 import { WelcomeScreen } from "@/features/chat/WelcomeScreen";
 import { Sidebar } from "@/features/conversations/Sidebar";
@@ -44,8 +37,6 @@ export const AppLayout = () => {
           <WelcomeScreen />
         )}
       </main>
-
-      <ToastContainer />
     </div>
   );
 };

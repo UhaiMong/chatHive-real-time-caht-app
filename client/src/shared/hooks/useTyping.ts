@@ -1,8 +1,12 @@
 import { useRef, useCallback } from "react";
-import { useSocket } from "./useSocket";
+import { getSocket } from "../services/socket";
 
 export const useTyping = (conversationId: string | null) => {
-  const { emitTypingStart, emitTypingStop } = useSocket();
+  // const { emitTypingStart, emitTypingStop } = useSocket();
+  // const typingRef = useRef(false);
+  // const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+  //   undefined,
+  // );
   const typingRef = useRef(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -10,28 +14,37 @@ export const useTyping = (conversationId: string | null) => {
 
   const onTyping = useCallback(() => {
     if (!conversationId) return;
-
     if (!typingRef.current) {
       typingRef.current = true;
-      emitTypingStart(conversationId);
+      try {
+        getSocket().emit("typing:start", { conversationId });
+      } catch {
+        /* noop */
+      }
     }
-
-    if (timeoutRef.current !== undefined) {
-      clearTimeout(timeoutRef.current);
-    }
-
+    clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       typingRef.current = false;
-      emitTypingStop(conversationId);
+      try {
+        getSocket().emit("typing:stop", { conversationId });
+      } catch {
+        /* noop */
+      }
     }, 2000);
-  }, [conversationId, emitTypingStart, emitTypingStop]);
+  }, [conversationId]);
 
   const stopTyping = useCallback(() => {
     if (!conversationId) return;
     clearTimeout(timeoutRef.current);
-    typingRef.current = false;
-    emitTypingStop(conversationId);
-  }, [conversationId, emitTypingStop]);
+    if (typingRef.current) {
+      typingRef.current = false;
+      try {
+        getSocket().emit("typing:stop", { conversationId });
+      } catch {
+        /* noop */
+      }
+    }
+  }, [conversationId]);
 
   return { onTyping, stopTyping };
 };

@@ -1,5 +1,5 @@
 // src/modules/message/message.controller.ts
-
+import { getIO } from "../../socket";
 import { Response, NextFunction } from "express";
 import { isValidObjectId } from "mongoose";
 import { AuthRequest } from "../../shared/types";
@@ -188,6 +188,7 @@ export const sendMessage = async (
       media,
       replyTo,
     });
+    getIO().to(req.params.conversationId).emit("message:new", message);
 
     sendSuccess(res, message, "Message sent", 201);
   } catch (err) {

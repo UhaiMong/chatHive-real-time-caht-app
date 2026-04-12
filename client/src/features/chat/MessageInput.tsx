@@ -19,7 +19,6 @@ import { setReplyTo } from "../../shared/store/uiSlice";
 import { addMessage } from "./messagesSlice";
 import { useTyping } from "../../shared/hooks/useTyping";
 import { messagesApi } from "../../shared/services/apiServices";
-import { getSocket } from "../../shared/services/socket";
 import { cn, formatFileSize, isImageType } from "../../shared/utils/helpers";
 import { addNotification } from "../notifications/notificationsSlice";
 import type { Message } from "../../shared/types";
@@ -126,17 +125,6 @@ export const MessageInput = memo(
         const res = await messagesApi.sendMessage(conversationId, formData);
         const newMsg = res.data.data!;
 
-        // Also emit via socket for real-time delivery to others
-        try {
-          getSocket().emit("message:send", {
-            conversationId,
-            content: text.trim(),
-            type: file ? undefined : "text",
-          });
-        } catch {
-          /* socket not critical here, HTTP already saved */
-        }
-
         dispatch(addMessage(newMsg));
       } catch {
         dispatch(
@@ -153,8 +141,6 @@ export const MessageInput = memo(
         handleSend();
       }
     };
-
-    // console.log("Typing indicator: ", onTyping(), stopTyping());
 
     return (
       <div className="shrink-0 bg-surface-secondary">
@@ -282,7 +268,7 @@ export const MessageInput = memo(
             onBlur={stopTyping}
             onClick={() => setShowEmoji(false)}
             className={cn(
-              "flex-1 bg-surface-input rounded-2xl px-4 py-2.5 text-sm",
+              "flex-1 rounded-full bg-gray-300 px-4 py-2.5 text-sm",
               "placeholder-gray-500 resize-none focus:outline-none",
               "border border-transparent focus:border-primary-600/50 transition-colors",
               "min-h-10.5 max-h-30 leading-relaxed",

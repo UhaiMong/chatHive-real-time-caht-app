@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { getSocket } from "../services/socket";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -20,9 +20,13 @@ export const useSocket = () => {
   const dispatch = useAppDispatch();
   const activeConversationId = useAppSelector((s) => s.ui.activeConversationId);
   const currentUser = useAppSelector((s) => s.auth.user);
+  const currentUserId = useAppSelector((s) => s.auth.user?._id);
   const conversationIds = useAppSelector((s) =>
     s.conversations.items.map((c) => c._id),
   );
+
+  const activeConvRef = useRef(activeConversationId);
+  const currentUserRef = useRef(currentUserId);
 
   useEffect(() => {
     let socket: ReturnType<typeof getSocket>;
@@ -32,8 +36,12 @@ export const useSocket = () => {
       return;
     }
 
-    // Join all conversation rooms
-    socket.emit("conversations:join");
+    // Join rooms immediately + rejoin on reconnect
+    const joinRooms = () => socket.emit("conversations:join");
+    joinRooms();
+    socket.on("connect", joinRooms);
+
+    // socket.emit("conversations:join");
 
     const onNewMessage = (message: Message) => {
       dispatch(addMessage(message));
@@ -42,16 +50,25 @@ export const useSocket = () => {
       );
 
       // Only increment unread if conversation isn't active
-      if (message.conversation !== activeConversationId) {
+      if (
+        message.conversation !== activeConvRef.current &&
+        message.sender._id !== currentUserRef.current
+      ) {
         dispatch(incrementUnread({ conversationId: message.conversation }));
-        if (message.sender._id !== currentUser?._id) {
-          dispatch(
-            addNotification({
-              type: "info",
-              message: `${message.sender.username}: ${message.content.slice(0, 40) || "📎 Media"}`,
-            }),
-          );
-        }
+        dispatch(
+          addNotification({
+            type: "info",
+            message: `${message.sender.username}: ${message.content.slice(0, 40) || "📎 Media"}`,
+          }),
+        );
+        // if (message.sender._id !== currentUser?._id) {
+        //   dispatch(
+        //     addNotification({
+        //       type: "info",
+        //       message: `${message.sender.username}: ${message.content.slice(0, 40) || "📎 Media"}`,
+        //     }),
+        //   );
+        // }
       }
     };
 
@@ -122,6 +139,7 @@ export const useSocket = () => {
     socket.on("user:offline", onUserOffline);
 
     return () => {
+      socket.off("connect", joinRooms);
       socket.off("message:new", onNewMessage);
       socket.off("message:edited", onMessageEdited);
       socket.off("message:deleted", onMessageDeleted);
@@ -131,12 +149,7 @@ export const useSocket = () => {
       socket.off("user:online", onUserOnline);
       socket.off("user:offline", onUserOffline);
     };
-  }, [
-    dispatch,
-    activeConversationId,
-    currentUser?._id,
-    conversationIds.length,
-  ]);
+  }, [dispatch]);
 
   const emitTypingStart = useCallback((conversationId: string) => {
     try {

@@ -73,6 +73,8 @@ const log = {
 
 // Main init
 
+let _io: Server | null = null;
+
 export const initSocket = (httpServer: HttpServer): Server => {
   const io = new Server(httpServer, {
     cors: {
@@ -99,6 +101,8 @@ export const initSocket = (httpServer: HttpServer): Server => {
       next(new Error("Invalid token"));
     }
   });
+
+  _io = io;
 
   // Connection
 
@@ -322,6 +326,11 @@ export const initSocket = (httpServer: HttpServer): Server => {
 };
 
 // Exports
+
+export const getIO = (): Server => {
+  if (!_io) throw new Error("Socket.io not initialized");
+  return _io;
+};
 
 export const isUserOnline = (userId: string): boolean =>
   onlineUsers.has(userId);

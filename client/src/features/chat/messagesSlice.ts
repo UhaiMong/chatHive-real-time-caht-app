@@ -1,6 +1,6 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { messagesApi } from '../../shared/services/apiServices';
-import type { Message } from '../../shared/types';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { messagesApi } from "../../shared/services/apiServices";
+import type { Message } from "../../shared/types";
 
 interface MessagePage {
   messages: Message[];
@@ -23,45 +23,51 @@ const defaultPage = (): MessagePage => ({
 const initialState: MessagesState = { byConversation: {} };
 
 export const fetchMessages = createAsyncThunk(
-  'messages/fetch',
+  "messages/fetch",
   async (
     { conversationId, cursor }: { conversationId: string; cursor?: string },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       const res = await messagesApi.getMessages(conversationId, cursor);
       return { conversationId, ...res.data.data! };
     } catch {
-      return rejectWithValue('Failed to load messages');
+      return rejectWithValue("Failed to load messages");
     }
-  }
+  },
 );
 
 const messagesSlice = createSlice({
-  name: 'messages',
+  name: "messages",
   initialState,
   reducers: {
     addMessage(state, action: PayloadAction<Message>) {
       const cid = action.payload.conversation;
       if (!state.byConversation[cid]) state.byConversation[cid] = defaultPage();
-      const exists = state.byConversation[cid].messages.some(m => m._id === action.payload._id);
+      const exists = state.byConversation[cid].messages.some(
+        (m) => m._id === action.payload._id,
+      );
       if (!exists) state.byConversation[cid].messages.push(action.payload);
     },
 
     addOptimisticMessage(
       state,
-      action: PayloadAction<{ conversationId: string; content: string; sender: Message['sender'] }>
+      action: PayloadAction<{
+        conversationId: string;
+        content: string;
+        sender: Message["sender"];
+      }>,
     ) {
       const { conversationId, content, sender } = action.payload;
       if (!state.byConversation[conversationId]) {
         state.byConversation[conversationId] = defaultPage();
       }
-      const tempId = 'temp-' + crypto.randomUUID();
+      const tempId = "temp-" + crypto.randomUUID();
       const tempMsg: Message = {
         _id: tempId,
         conversation: conversationId,
         sender,
-        type: 'text',
+        type: "text",
         content,
         readBy: [],
         deliveredTo: [],
@@ -77,17 +83,17 @@ const messagesSlice = createSlice({
 
     replacePendingMessage(
       state,
-      action: PayloadAction<{ localId: string; message: Message }>
+      action: PayloadAction<{ localId: string; message: Message }>,
     ) {
       const { localId, message } = action.payload;
       const cid = message.conversation;
       const page = state.byConversation[cid];
       if (!page) return;
-      const idx = page.messages.findIndex(m => m.localId === localId);
+      const idx = page.messages.findIndex((m) => m.localId === localId);
       if (idx >= 0) {
         page.messages[idx] = message;
       } else {
-        const exists = page.messages.some(m => m._id === message._id);
+        const exists = page.messages.some((m) => m._id === message._id);
         if (!exists) page.messages.push(message);
       }
     },
@@ -96,33 +102,37 @@ const messagesSlice = createSlice({
       const cid = action.payload.conversation;
       const page = state.byConversation[cid];
       if (!page) return;
-      const idx = page.messages.findIndex(m => m._id === action.payload._id);
+      const idx = page.messages.findIndex((m) => m._id === action.payload._id);
       if (idx >= 0) page.messages[idx] = action.payload;
     },
 
     deleteMessage(
       state,
-      action: PayloadAction<{ messageId: string; conversationId: string }>
+      action: PayloadAction<{ messageId: string; conversationId: string }>,
     ) {
       const page = state.byConversation[action.payload.conversationId];
       if (!page) return;
-      const msg = page.messages.find(m => m._id === action.payload.messageId);
+      const msg = page.messages.find((m) => m._id === action.payload.messageId);
       if (msg) {
         msg.isDeleted = true;
-        msg.content = '';
+        msg.content = "";
         msg.media = undefined;
       }
     },
 
     markMessagesRead(
       state,
-      action: PayloadAction<{ conversationId: string; userId: string; readAt: string }>
+      action: PayloadAction<{
+        conversationId: string;
+        userId: string;
+        readAt: string;
+      }>,
     ) {
       const { conversationId, userId, readAt } = action.payload;
       const page = state.byConversation[conversationId];
       if (!page) return;
-      page.messages.forEach(m => {
-        const alreadyRead = m.readBy.some(r => r.user === userId);
+      page.messages.forEach((m) => {
+        const alreadyRead = m.readBy.some((r) => r.user === userId);
         if (!alreadyRead) m.readBy.push({ user: userId, readAt });
       });
     },
@@ -131,11 +141,12 @@ const messagesSlice = createSlice({
       delete state.byConversation[action.payload];
     },
   },
-  extraReducers: builder => {
+  extraReducers: (builder) => {
     builder
       .addCase(fetchMessages.pending, (state, action) => {
         const cid = action.meta.arg.conversationId;
-        if (!state.byConversation[cid]) state.byConversation[cid] = defaultPage();
+        if (!state.byConversation[cid])
+          state.byConversation[cid] = defaultPage();
         state.byConversation[cid].loading = true;
       })
       .addCase(fetchMessages.fulfilled, (state, action) => {
@@ -143,14 +154,17 @@ const messagesSlice = createSlice({
         const page = state.byConversation[conversationId];
         page.loading = false;
         page.initialized = true;
-        const existingIds = new Set(page.messages.map(m => m._id));
-        const newMsgs = (messages as Message[]).filter(m => !existingIds.has(m._id));
+        const existingIds = new Set(page.messages.map((m) => m._id));
+        const newMsgs = (messages as Message[]).filter(
+          (m) => !existingIds.has(m._id),
+        );
         page.messages = [...newMsgs, ...page.messages];
         page.nextCursor = nextCursor;
       })
       .addCase(fetchMessages.rejected, (state, action) => {
         const cid = action.meta.arg.conversationId;
-        if (state.byConversation[cid]) state.byConversation[cid].loading = false;
+        if (state.byConversation[cid])
+          state.byConversation[cid].loading = false;
       });
   },
 });
