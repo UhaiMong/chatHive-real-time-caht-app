@@ -80,14 +80,13 @@ export const globalErrorHandler = (
   err: unknown,
   req: Request,
   res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction,
 ): void => {
   const appErr = normalise(err);
 
   // Log non-operational (programming) errors loudly
   if (!appErr.isOperational) {
-    console.error("🔴 UNHANDLED ERROR:", appErr);
+    console.error("UNHANDLED ERROR:", appErr);
   }
 
   res.status(appErr.statusCode).json(appErr.toJSON(isDev));
