@@ -65,8 +65,9 @@ export const NewChatModal = ({ open }: NewChatModalProps) => {
 
   return (
     <Modal open={open} onClose={onClose} title="New Chat" size="sm">
-      <div className="p-4 flex flex-col gap-3">
+      <div className="p-4 flex flex-col gap">
         <Input
+          className="text-gray-200"
           placeholder="Search by name or email…"
           leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
           value={query}

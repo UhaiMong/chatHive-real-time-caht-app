@@ -94,8 +94,9 @@ export const NewGroupModal = ({ open }: NewGroupModalProps) => {
 
   return (
     <Modal open={open} onClose={onClose} title="New Group" size="sm">
-      <div className="p-4 flex flex-col gap-4">
+      <div className="p-4 flex flex-col gap-4 border border-gray-200">
         <Input
+          className="text-gray-200 border border-gray-200"
           placeholder="Group name…"
           value={groupName}
           onChange={(e) => setGroupName(e.target.value)}
@@ -103,32 +104,36 @@ export const NewGroupModal = ({ open }: NewGroupModalProps) => {
         />
 
         {selected.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {selected.map((u) => (
-              <span
-                key={u._id}
-                className="flex items-center gap-1.5 bg-primary-600/20 text-primary-300 text-xs rounded-full pl-2.5 pr-1.5 py-1"
-              >
-                {u.username}
-                <button
-                  onClick={() => toggle(u)}
-                  className="hover:text-white transition-colors"
+          <div>
+            <p className="text-gray-200 font-semibold mb-1.5">Group Member</p>
+            <div className="flex flex-wrap gap-2">
+              {selected.map((u) => (
+                <span
+                  key={u._id}
+                  className="flex items-center gap-1.5 bg-primary-600/20 text-primary-300 text-xs rounded-full pl-2.5 pr-1.5 py-1 text-gray-200"
                 >
-                  <XMarkIcon className="w-3.5 h-3.5" />
-                </button>
-              </span>
-            ))}
+                  {u.username}
+                  <button
+                    onClick={() => toggle(u)}
+                    className="hover:text-white transition-colors"
+                  >
+                    <XMarkIcon className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         )}
 
         <Input
           placeholder="Search people to add…"
+          className="text-gray-200"
           leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
 
-        <div className="min-h-[160px] max-h-[240px] overflow-y-auto -mx-1 px-1">
+        <div className="min-h-40 max-h-60 overflow-y-auto -mx-1 px-1">
           {loading && (
             <div className="flex justify-center py-6">
               <Spinner />
@@ -179,9 +184,9 @@ export const NewGroupModal = ({ open }: NewGroupModalProps) => {
           onClick={handleCreate}
           loading={submitting}
           disabled={!groupName.trim() || selected.length < 2}
-          className="w-full"
+          className="w-full cursor-pointer font-semibold bg-green-400 text-gray-50"
         >
-          Create Group ({selected.length} members)
+          Create ({selected.length} members)
         </Button>
       </div>
     </Modal>
