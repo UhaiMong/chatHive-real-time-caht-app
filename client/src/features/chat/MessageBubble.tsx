@@ -39,7 +39,7 @@ export const MessageBubble = memo(
   }: MessageBubbleProps) => {
     const dispatch = useAppDispatch();
     const { emitDeleteMessage } = useSocket();
-    const [menuOpen, setMenuOpen] = useState(false);
+    const [_menuOpen, setMenuOpen] = useState(false);
 
     const isRead = message.readBy.length > 0;
     const isDelivered = message.deliveredTo.length > 1;
