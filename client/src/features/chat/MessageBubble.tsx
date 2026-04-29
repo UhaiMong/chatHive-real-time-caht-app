@@ -39,7 +39,6 @@ export const MessageBubble = memo(
   }: MessageBubbleProps) => {
     const dispatch = useAppDispatch();
     const { emitDeleteMessage } = useSocket();
-    const [_menuOpen, setMenuOpen] = useState(false);
 
     const isRead = message.readBy.length > 0;
     const isDelivered = message.deliveredTo.length > 1;
@@ -62,7 +61,6 @@ export const MessageBubble = memo(
         )}
         onContextMenu={(e) => {
           e.preventDefault();
-          setMenuOpen(true);
         }}
       >
         {/* Avatar for others in group */}

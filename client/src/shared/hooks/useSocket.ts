@@ -19,11 +19,7 @@ import type { Message, TypingEvent, PresenceEvent, ReadEvent } from "../types";
 export const useSocket = () => {
   const dispatch = useAppDispatch();
   const activeConversationId = useAppSelector((s) => s.ui.activeConversationId);
-  const _currentUser = useAppSelector((s) => s.auth.user);
   const currentUserId = useAppSelector((s) => s.auth.user?._id);
-  const _conversationIds = useAppSelector((s) =>
-    s.conversations.items.map((c) => c._id),
-  );
 
   const activeConvRef = useRef(activeConversationId);
   const currentUserRef = useRef(currentUserId);
