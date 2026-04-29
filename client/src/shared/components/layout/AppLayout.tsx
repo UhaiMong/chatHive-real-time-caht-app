@@ -3,7 +3,6 @@ import { WelcomeScreen } from "@/features/chat/WelcomeScreen";
 import { Sidebar } from "@/features/conversations/Sidebar";
 import { useSocket } from "@/shared/hooks/useSocket";
 import { useAppSelector } from "@/shared/store/hooks";
-import { ToastContainer } from "../ui/ToastContainer";
 
 export const AppLayout = () => {
   const activeConversationId = useAppSelector((s) => s.ui.activeConversationId);

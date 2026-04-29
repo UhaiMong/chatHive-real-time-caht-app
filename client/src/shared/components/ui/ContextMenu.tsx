@@ -1,5 +1,10 @@
 import { Fragment, useState } from "react";
-import { Dialog, Transition } from "@headlessui/react";
+import {
+  Dialog,
+  DialogPanel,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 import { cn } from "../../utils/helpers";
 
 export interface ContextMenuItem {
@@ -29,7 +34,7 @@ export const ContextMenuDrawer = ({ items, trigger }: ContextMenuProps) => {
           onClose={() => setOpen(false)}
         >
           {/* Overlay */}
-          <Transition.Child
+          <TransitionChild
             as={Fragment}
             enter="transition-opacity ease-linear duration-200"
             enterFrom="opacity-0"
@@ -39,10 +44,10 @@ export const ContextMenuDrawer = ({ items, trigger }: ContextMenuProps) => {
             leaveTo="opacity-0"
           >
             <div className="fixed inset-0 bg-black/30" />
-          </Transition.Child>
+          </TransitionChild>
 
           {/* Drawer panel */}
-          <Transition.Child
+          <TransitionChild
             as={Fragment}
             enter="transition ease-in-out duration-300 transform"
             enterFrom="-translate-x-full"
@@ -51,9 +56,9 @@ export const ContextMenuDrawer = ({ items, trigger }: ContextMenuProps) => {
             leaveFrom="translate-x-0"
             leaveTo="-translate-x-full"
           >
-            <Dialog.Panel
+            <DialogPanel
               className={cn(
-                "fixed top-[var(--header-height,64px)] left-0 h-[calc(100%-var(--header-height,64px))] w-64",
+                "fixed top-(--header-height,64px) left-0 h-[calc(100%-var(--header-height,64px))] w-64",
                 "bg-gray-800 text-gray-200 shadow-xl flex flex-col",
               )}
             >
@@ -79,8 +84,8 @@ export const ContextMenuDrawer = ({ items, trigger }: ContextMenuProps) => {
                   {item.label}
                 </button>
               ))}
-            </Dialog.Panel>
-          </Transition.Child>
+            </DialogPanel>
+          </TransitionChild>
         </Dialog>
       </Transition>
     </>

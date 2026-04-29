@@ -9,9 +9,10 @@ export const getSocket = (): Socket => {
 };
 
 export const initSocket = (token: string): Socket => {
+  const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
   if (socket?.connected) return socket;
 
-  socket = io("http://localhost:5000", {
+  socket = io(SOCKET_URL, {
     auth: { token },
     transports: ["websocket", "polling"],
     reconnectionAttempts: 5,
